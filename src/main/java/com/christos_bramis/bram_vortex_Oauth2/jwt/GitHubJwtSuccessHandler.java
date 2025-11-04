@@ -1,4 +1,4 @@
-package com.christos_bramis.bram_vortex_Oauth2;
+package com.christos_bramis.bram_vortex_Oauth2.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

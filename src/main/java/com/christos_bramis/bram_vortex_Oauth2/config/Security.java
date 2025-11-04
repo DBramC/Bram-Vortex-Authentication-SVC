@@ -1,8 +1,8 @@
 package com.christos_bramis.bram_vortex_Oauth2.config;
 
 
-import com.christos_bramis.bram_vortex_Oauth2.GitHubJwtSuccessHandler;
-import com.christos_bramis.bram_vortex_Oauth2.JwtTokenProvider;
+import com.christos_bramis.bram_vortex_Oauth2.jwt.GitHubJwtSuccessHandler;
+import com.christos_bramis.bram_vortex_Oauth2.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
