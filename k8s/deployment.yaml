@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-boot-deployment
+  namespace: spring-boot
+  labels:
+    app: spring-boot-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-boot-deployment
+  template:
+    metadata:
+      name: spring-boot-deployment
+      labels:
+        app: spring-boot-deployment
+    spec:
+      containers:
+        - name: spring-boot-deployment
+          image: christosbramis/bram-vortex-auth:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      restartPolicy: Always
