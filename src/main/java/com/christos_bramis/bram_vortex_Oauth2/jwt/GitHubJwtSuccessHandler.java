@@ -23,7 +23,7 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication) throws IOException {
 
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        OAuth2AuthorizedClient client = jwtTokenProvider.getAuthorizedClient(oauthToken);
+        OAuth2AuthorizedClient client = jwtTokenProvider.getAuthorizedClient(oauthToken);  // Can delete jwtTokenProvider
         String githubToken = client.getAccessToken().getTokenValue();        // Way to access Token
 
                                                                             // To be changed for Secrets, only for testing now
