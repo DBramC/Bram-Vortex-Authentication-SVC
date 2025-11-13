@@ -9,5 +9,4 @@ public class BramVortexOauth2Application {
 	public static void main(String[] args) {
 		SpringApplication.run(BramVortexOauth2Application.class, args);
 	}
-
 }
