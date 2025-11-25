@@ -1,20 +1,28 @@
 package com.christos_bramis.bram_vortex_Oauth2.jwt;
 
+import com.christos_bramis.bram_vortex_Oauth2.service.UserSecretService; // <-- Βεβαιώσου ότι το import είναι σωστό
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Component
 public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
-    public GitHubJwtSuccessHandler(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    private final UserSecretService userSecretService;
+
+    public GitHubJwtSuccessHandler(OAuth2AuthorizedClientService authorizedClientService,
+                                   UserSecretService userSecretService) {
+        this.authorizedClientService = authorizedClientService;
+        this.userSecretService = userSecretService;
     }
 
     @Override
@@ -23,16 +31,25 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication authentication) throws IOException {
 
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        OAuth2AuthorizedClient client = jwtTokenProvider.getAuthorizedClient(oauthToken);  // Can delete jwtTokenProvider
-        String githubToken = client.getAccessToken().getTokenValue();        // Way to access Token
 
-                                                                            // To be changed for Secrets, only for testing now
-        String jwt = jwtTokenProvider.createToken(oauthToken.getName(), githubToken);
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                oauthToken.getAuthorizedClientRegistrationId(),
+                oauthToken.getName());
 
+        if (client != null) {
+
+            String githubAccessToken = client.getAccessToken().getTokenValue();
+
+            String username = oauthToken.getPrincipal().getAttribute("login");
+
+            userSecretService.saveUserToken(username, githubAccessToken);
+        }
+
+        // Z. Απάντηση στον χρήστη (Redirect ή Μήνυμα)
         response.setContentType("application/json");
-        response.getWriter().write("{\"token\":\"" + jwt + "\"}");
+        response.getWriter().write("{\"status\": \"success\", \"message\": \"Login successful & Token saved to Vault!\"}");
 
-        System.out.printf(jwt);
+        // Σημείωση: Σε κανονική εφαρμογή, εδώ θα έκανες redirect στο Frontend σου:
+        // response.sendRedirect("http://localhost:3000/dashboard");
     }
-
 }
