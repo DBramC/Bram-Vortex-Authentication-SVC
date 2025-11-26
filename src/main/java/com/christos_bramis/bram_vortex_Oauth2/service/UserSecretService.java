@@ -3,7 +3,6 @@ package com.christos_bramis.bram_vortex_Oauth2.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.vault.core.VaultTemplate;
-import org.springframework.vault.support.VaultResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,15 +26,5 @@ public class UserSecretService {
         System.out.println("✅ Token saved securely to Vault for user: " + username);
     }
 
-    /**
-     * Read Token from Vault
-     */
-    public String getUserToken(String username) {
-        VaultResponse response = vaultTemplate.read("secret/users/" + username);
 
-        if (response.getData() != null) {
-            return (String) response.getData().get("github_token");
-        }
-        return null;
-    }
 }

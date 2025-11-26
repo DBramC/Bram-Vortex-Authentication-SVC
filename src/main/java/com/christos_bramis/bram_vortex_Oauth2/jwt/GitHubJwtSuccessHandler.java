@@ -1,6 +1,6 @@
 package com.christos_bramis.bram_vortex_Oauth2.jwt;
 
-import com.christos_bramis.bram_vortex_Oauth2.service.UserSecretService; // <-- Βεβαιώσου ότι το import είναι σωστό
+import com.christos_bramis.bram_vortex_Oauth2.service.UserSecretService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -16,13 +16,14 @@ import java.io.IOException;
 public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
 
     private final OAuth2AuthorizedClientService authorizedClientService;
-
     private final UserSecretService userSecretService;
+    private final JwtTokenProvider  jwtTokenProvider;
 
     public GitHubJwtSuccessHandler(OAuth2AuthorizedClientService authorizedClientService,
-                                   UserSecretService userSecretService) {
+                                   UserSecretService userSecretService, JwtTokenProvider jwtTokenProvider) {
         this.authorizedClientService = authorizedClientService;
         this.userSecretService = userSecretService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -36,20 +37,20 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
                 oauthToken.getAuthorizedClientRegistrationId(),
                 oauthToken.getName());
 
+        String appJwt = "nothing of value";
+
         if (client != null) {
-
             String githubAccessToken = client.getAccessToken().getTokenValue();
-
             String username = oauthToken.getPrincipal().getAttribute("login");
 
             userSecretService.saveUserToken(username, githubAccessToken);
+            appJwt = jwtTokenProvider.createToken(username);                 // to be used for the other microservices
         }
 
-        // Z. Απάντηση στον χρήστη (Redirect ή Μήνυμα)
-        response.setContentType("application/json");
-        response.getWriter().write("{\"status\": \"success\", \"message\": \"Login successful & Token saved to Vault!\"}");
+        // 3. Απάντηση (Προσωρινή ή Redirect)
+        response.setContentType("application/json"); // Καλό είναι να ορίζεις και τον τύπο
+        response.getWriter().write("{\"status\": \"success\", \"message\": \"Token saved to Vault!\", \"token\": \"" + appJwt + "\"}");
 
-        // Σημείωση: Σε κανονική εφαρμογή, εδώ θα έκανες redirect στο Frontend σου:
-        // response.sendRedirect("http://localhost:3000/dashboard");
+        // Ή: response.sendRedirect("http://localhost:3000/dashboard");
     }
 }

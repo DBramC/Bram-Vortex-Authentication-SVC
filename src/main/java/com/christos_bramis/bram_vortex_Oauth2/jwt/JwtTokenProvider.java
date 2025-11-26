@@ -1,46 +1,85 @@
 package com.christos_bramis.bram_vortex_Oauth2.jwt;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.Claims;
-
-import java.util.Date;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.vault.core.VaultTemplate;
+import org.springframework.vault.support.VaultResponse;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class JwtTokenProvider {
 
-// make a JWT for the user and the salted hash password
-    private final long validityInMs = 3600000;            // 1 hour
-    private final OAuth2AuthorizedClientService authorizedClientService;
+    private final VaultTemplate vaultTemplate;
+    private final ObjectMapper objectMapper;
+
+    private final long validityInMs = 3600000; // 1 hour
+    private static final String TRANSIT_KEY_NAME = "jwt-signing-key";
 
     @Autowired
-    public JwtTokenProvider(OAuth2AuthorizedClientService authorizedClientService) {
-        this.authorizedClientService = authorizedClientService;
+    public JwtTokenProvider(VaultTemplate vaultTemplate, ObjectMapper objectMapper) {
+        this.vaultTemplate = vaultTemplate;
+        this.objectMapper = objectMapper;
     }
 
-    public String createToken(String username, String githubToken) {        // possible createSecret to be renamed
-        Claims claims = Jwts.claims().setSubject(username);
-        claims.put("github_token", githubToken);
+    public String createToken(String username) {
+        try {
+            // 1. Header
+            Map<String, Object> header = new HashMap<>();
+            header.put("alg", "RS256");
+            header.put("typ", "JWT");
 
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + validityInMs);
+            // 2. Payload (Claims)
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("sub", username);
+            payload.put("roles", new String[]{"USER", "MEMBER"});
 
-        return Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(expiry)
-//                .signWith(SignatureAlgorithm.RS256, privateKey)
-                .compact();
+            Date now = new Date();
+            Date expiry = new Date(now.getTime() + validityInMs);
+            payload.put("iat", now.getTime() / 1000);
+            payload.put("exp", expiry.getTime() / 1000);
+
+            // 3. Encoding Header.Payload
+            String encodedHeader = toBase64Url(objectMapper.writeValueAsString(header).getBytes());
+            String encodedPayload = toBase64Url(objectMapper.writeValueAsString(payload).getBytes());
+            String dataToSign = encodedHeader + "." + encodedPayload;
+
+            // 4. Αποστολή στο Vault (Χειροκίνητα με Map)
+            // Το Transit API θέλει το input σε απλό Base64
+            String inputBase64 = Base64.getEncoder().encodeToString(dataToSign.getBytes(StandardCharsets.UTF_8));
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("input", inputBase64);
+
+
+            VaultResponse response = vaultTemplate.write("transit/sign/" + TRANSIT_KEY_NAME, requestBody);
+
+            // 5. Λήψη Υπογραφής
+            assert response != null;
+            Map<String, Object> data = response.getData();
+            assert data != null;
+            String vaultSignature = (String) data.get("signature"); // "vault:v1:XYZ..."
+
+            // 6. Καθαρισμός Υπογραφής
+            String rawSignature = vaultSignature.substring(vaultSignature.lastIndexOf(":") + 1);
+            // Μετατροπή από Vault Base64 σε JWT Base64Url
+            byte[] sigBytes = Base64.getDecoder().decode(rawSignature);
+            String jwtSignature = Base64.getUrlEncoder().withoutPadding().encodeToString(sigBytes);
+
+            // 7. Τελικό Token
+            return dataToSign + "." + jwtSignature;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error signing JWT with Vault", e);
+        }
     }
 
-    public OAuth2AuthorizedClient getAuthorizedClient(OAuth2AuthenticationToken oauthToken) {
-        return authorizedClientService.loadAuthorizedClient(
-                oauthToken.getAuthorizedClientRegistrationId(),
-                oauthToken.getName()
-        );    }
+    private String toBase64Url(byte[] bytes) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
 }
