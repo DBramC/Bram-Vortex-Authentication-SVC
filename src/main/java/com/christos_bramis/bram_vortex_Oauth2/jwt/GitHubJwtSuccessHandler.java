@@ -47,10 +47,8 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
             appJwt = jwtTokenProvider.createToken(username);                 // to be used for the other microservices
         }
 
-        // 3. Απάντηση (Προσωρινή ή Redirect)
-        response.setContentType("application/json"); // Καλό είναι να ορίζεις και τον τύπο
-        response.getWriter().write("{\"status\": \"success\", \"message\": \"Token saved to Vault!\", \"token\": \"" + appJwt + "\"}");
+        String targetUrl = "/?token=" + appJwt;
 
-        // Ή: response.sendRedirect("http://localhost:3000/dashboard");
+        response.sendRedirect(targetUrl);
     }
 }
