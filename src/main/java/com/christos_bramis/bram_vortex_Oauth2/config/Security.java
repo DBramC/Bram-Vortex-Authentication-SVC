@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -19,7 +20,7 @@ public class Security {
                 // 1. Disable CSRF (Correct for Stateless APIs & JWT)
                 // This is not a shortcut; it is the standard architectural choice for REST APIs
                 // where state is handled by tokens, not session cookies.
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
 
                 // 2. Configure Stateless Session Management
                 // We tell Spring: "Do not hold session memory for the user."
