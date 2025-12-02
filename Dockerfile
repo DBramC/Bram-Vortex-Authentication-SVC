@@ -3,6 +3,10 @@ FROM eclipse-temurin:21-jdk-jammy
 
 LABEL authors="DaBram"
 
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /app
 
