@@ -1,6 +1,7 @@
 package com.christos_bramis.bram_vortex_Oauth2.config;
 
 import com.christos_bramis.bram_vortex_Oauth2.jwt.GitHubJwtSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,41 +9,69 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class Security {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrlBase;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            GitHubJwtSuccessHandler successHandler) throws Exception {
         http
-                // 1. Disable CSRF (Correct for Stateless APIs & JWT)
-                // This is not a shortcut; it is the standard architectural choice for REST APIs
-                // where state is handled by tokens, not session cookies.
+                // 1. ΕΝΕΡΓΟΠΟΙΗΣΗ CORS (ΣΗΜΑΝΤΙΚΟ!)
+                // Λέμε στο Spring να χρησιμοποιήσει το Bean που φτιάξαμε παρακάτω
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 2. Disable CSRF (Correct for Stateless)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. Configure Stateless Session Management
-                // We tell Spring: "Do not hold session memory for the user."
-                // Every request must possess identity (Token) or login from scratch.
+                // 3. Stateless Session
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 3. Authorization Settings
+                // 4. Authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Allow everyone to see the login page and oauth endpoints
                         .requestMatchers("/", "/login**", "/error", "/oauth2/**").permitAll()
-                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
 
-                // 4. OAuth2 Login Configuration
+                // 5. OAuth2 Login
                 .oauth2Login(oauth2 -> oauth2
-                        // Hook up the Handler we created (Dependency Injection)
                         .successHandler(successHandler)
                 );
 
         return http.build();
+    }
+
+    // 6. ΟΡΙΣΜΟΣ ΤΩΝ ΚΑΝΟΝΩΝ CORS
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Επιτρέπουμε το Frontend (Vite)
+        configuration.setAllowedOrigins(List.of(frontendUrlBase));
+
+        // Επιτρέπουμε όλες τις μεθόδους (GET, POST, κλπ)
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Επιτρέπουμε headers (π.χ. Authorization για το JWT)
+        configuration.setAllowedHeaders(List.of("*"));
+
+        // Επιτρέπουμε credentials (αν χρειαστεί)
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
