@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class JwtTokenProvider {
@@ -38,6 +39,9 @@ public class JwtTokenProvider {
             Map<String, Object> payload = new HashMap<>();
             payload.put("sub", username);
             payload.put("roles", new String[]{"USER", "MEMBER"});
+            payload.put("jti", UUID.randomUUID().toString());
+            payload.put("aud", "bram-vortex-frontend");
+            payload.put("iss","bram-vortex-auth");
 
             Date now = new Date();
             Date expiry = new Date(now.getTime() + validityInMs);

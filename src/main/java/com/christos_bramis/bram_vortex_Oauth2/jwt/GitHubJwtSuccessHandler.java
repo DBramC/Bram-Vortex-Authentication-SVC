@@ -3,6 +3,7 @@ package com.christos_bramis.bram_vortex_Oauth2.jwt;
 import com.christos_bramis.bram_vortex_Oauth2.service.UserSecretService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -15,6 +16,8 @@ import java.io.IOException;
 @Component
 public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrlBase;
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final UserSecretService userSecretService;
     private final JwtTokenProvider  jwtTokenProvider;
@@ -37,7 +40,7 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
                 oauthToken.getAuthorizedClientRegistrationId(),
                 oauthToken.getName());
 
-        String appJwt = "nothing of value";
+        String appJwt = "";
 
         if (client != null) {
             String githubAccessToken = client.getAccessToken().getTokenValue();
@@ -47,7 +50,7 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
             appJwt = jwtTokenProvider.createToken(username);                 // to be used for the other microservices
         }
 
-        String targetUrl = "/?token=" + appJwt;
+        String targetUrl = frontendUrlBase + "/auth-callback?token=" + appJwt;
 
         response.sendRedirect(targetUrl);
     }
