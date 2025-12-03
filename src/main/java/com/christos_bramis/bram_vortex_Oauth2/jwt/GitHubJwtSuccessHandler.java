@@ -50,7 +50,7 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
             appJwt = jwtTokenProvider.createToken(username);                 // to be used for the other microservices
         }
 
-        String targetUrl = frontendUrlBase + "/auth-callback?token=" + appJwt;
+        String targetUrl = frontendUrlBase + "auth-callback?token=" + appJwt;
 
         response.sendRedirect(targetUrl);
     }
