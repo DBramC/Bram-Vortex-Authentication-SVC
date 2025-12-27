@@ -45,7 +45,7 @@ public class Security {
                         .anyRequest().authenticated()
                 )
 
-                // 5. OAuth2 Login
+                // 5. OAuth2
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(successHandler)
                 );
