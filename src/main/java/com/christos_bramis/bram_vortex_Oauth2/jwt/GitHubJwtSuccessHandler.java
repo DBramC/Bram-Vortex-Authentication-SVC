@@ -1,6 +1,7 @@
 package com.christos_bramis.bram_vortex_Oauth2.jwt;
 
 import com.christos_bramis.bram_vortex_Oauth2.service.UserSecretService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +52,18 @@ public class GitHubJwtSuccessHandler implements AuthenticationSuccessHandler {
         }
 
         String targetUrl = frontendUrlBase + "/auth-callback?token=" + appJwt;
+
+        // Διαγραφή του JSESSIONID cookie
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        // Ακύρωση του Server Session
+        if (request.getSession(false) != null) {
+            request.getSession(false).invalidate();
+        }
 
         response.sendRedirect(targetUrl);
     }
