@@ -14,4 +14,6 @@ public class HomeController {
 //                       @RequestParam(name = "token", required = false) String token) {
 //
 //    }
+
+    // will add api for authenticating request in the future probably
 }
