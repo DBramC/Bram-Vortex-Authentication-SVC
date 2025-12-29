@@ -60,6 +60,8 @@ public class JwtTokenProvider {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("input", inputBase64);
 
+            requestBody.put("signature_algorithm", "pkcs1v15");
+            requestBody.put("hash_algorithm", "sha2-256");
 
             VaultResponse response = vaultTemplate.write("transit/sign/" + TRANSIT_KEY_NAME, requestBody);
 
