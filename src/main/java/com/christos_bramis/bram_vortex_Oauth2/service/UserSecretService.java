@@ -21,7 +21,9 @@ public class UserSecretService {
         Map<String, String> secrets = new HashMap<>();
         secrets.put("github_token", accessToken);
 
-        vaultTemplate.write("secret/users/" + username, secrets);
+        String vaultPath = "secret/users/" + username + "/github";
+
+        vaultTemplate.write(vaultPath, secrets);
 
         System.out.println("✅ Token saved securely to Vault for user: " + username);
     }
