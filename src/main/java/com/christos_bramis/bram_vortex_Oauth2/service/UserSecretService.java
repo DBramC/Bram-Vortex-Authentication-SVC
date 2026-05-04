@@ -12,21 +12,12 @@ public class UserSecretService {
     @Autowired
     private VaultTemplate vaultTemplate;
 
-    /**
-     * Saves Token to Vault (KV Version 1) ( for KV Version 2 add /data )
-     * Path: secret/users/{username}
-     */
     public void saveUserToken(String username, String accessToken) {
-
         Map<String, String> secrets = new HashMap<>();
         secrets.put("github_token", accessToken);
-
         String vaultPath = "secret/users/" + username + "/github";
-
         vaultTemplate.write(vaultPath, secrets);
-
         System.out.println("✅ Token saved securely to Vault for user: " + username);
     }
-
 
 }
