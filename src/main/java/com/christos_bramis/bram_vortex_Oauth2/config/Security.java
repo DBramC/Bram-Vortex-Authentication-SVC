@@ -42,6 +42,7 @@ public class Security {
                 // 4. Authorization
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login**", "/error", "/oauth2/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
